@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edible Timing Planner</title>
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.planner-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+.planner-card {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 20px rgba(27,58,47,0.08);
+  border: 1px solid rgba(27,58,47,0.08);
+}
+
+.planner-header {
+  background: #1B3A2F;
+  padding: 24px 28px 20px;
+  text-align: center;
+}
+
+.planner-header h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.planner-header p {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 400;
+}
+
+.planner-body {
+  padding: 28px 28px 8px;
+}
+
+.planner-question {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1B3A2F;
+  margin: 0 0 14px;
+  text-align: center;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.time-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 8px;
+  border: 2px solid #e0e6e3;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1B3A2F;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.time-btn:hover {
+  border-color: #1B3A2F;
+  background: rgba(27,58,47,0.03);
+}
+
+.time-btn.selected {
+  border-color: #1B3A2F;
+  background: #1B3A2F;
+  color: #ffffff;
+}
+
+.result-area {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.5s ease, opacity 0.4s ease, margin 0.4s ease;
+  margin-bottom: 0;
+}
+
+.result-area.visible {
+  max-height: 600px;
+  opacity: 1;
+  margin-bottom: 20px;
+}
+
+.result-card {
+  background: linear-gradient(135deg, rgba(27,58,47,0.04) 0%, rgba(27,58,47,0.08) 100%);
+  border-radius: 12px;
+  padding: 20px 22px;
+  border-left: 4px solid #1B3A2F;
+}
+
+.result-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1B3A2F;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timeline-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.timeline-row.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timeline-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-right: 14px;
+  margin-top: 1px;
+}
+
+.icon-take { background: #D4E7DC; }
+.icon-onset { background: #FDE8D0; }
+.icon-peak { background: #E8D5F5; }
+.icon-fade { background: #D4E0F0; }
+
+.timeline-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-time {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1B3A2F;
+  margin: 0 0 2px;
+}
+
+.timeline-label {
+  font-size: 13px;
+  color: #5a6b63;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.result-note {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.7);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #5a6b63;
+  line-height: 1.5;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease 0.4s, transform 0.3s ease 0.4s;
+}
+
+.result-note.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reset-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: #1B3A2F;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  margin-bottom: 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reset-btn:hover {
+  opacity: 1;
+}
+
+@media (max-width: 400px) {
+  .planner-wrap { padding: 12px 10px; }
+  .planner-header { padding: 20px 20px 16px; }
+  .planner-header h2 { font-size: 19px; }
+  .planner-body { padding: 22px 18px 8px; }
+  .time-grid { gap: 8px; }
+  .time-btn { padding: 12px 6px; font-size: 14px; }
+  .result-card { padding: 16px 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="planner-wrap">
+  <div class="planner-card">
+    <div class="planner-header">
+      <h2>Edible Timing Planner</h2>
+      <p>Plan your evening around the onset window</p>
+    </div>
+    <div class="planner-body">
+      <p class="planner-question">When do you want to be fully relaxed?</p>
+      <div class="time-grid" id="timeGrid">
+        <button class="time-btn" data-hour="19">7:00 PM</button>
+        <button class="time-btn" data-hour="20">8:00 PM</button>
+        <button class="time-btn" data-hour="21">9:00 PM</button>
+        <button class="time-btn" data-hour="22">10:00 PM</button>
+        <button class="time-btn" data-hour="23">11:00 PM</button>
+        <button class="time-btn" data-hour="24">12:00 AM</button>
+      </div>
+      <div class="result-area" id="resultArea">
+        <div class="result-card">
+          <p class="result-title">Your evening timeline</p>
+          <div class="timeline-row" id="row-take">
+            <div class="timeline-icon icon-take">🍬</div>
+            <div class="timeline-text">
+              <p class="timeline-time" id="time-take"></p>
+              <p class="timeline-label">Take your edible</p>
+            </div>
+          </div>
+          <div class="timeline-row" id="row-onset">
+            <div class="timeline-icon icon-onset">✨</div>
+            <div class="timeline-text">
+              <p class="timeline-time" id="time-onset"></p>
+              <p class="timeline-label">First effects begin (30-90 min)</p>
+            </div>
+          </div>
+          <div class="timeline-row" id="row-peak">
+            <div class="timeline-icon icon-peak">🌙</div>
+            <div class="timeline-text">
+              <p class="timeline-time" id="time-peak"></p>
+              <p class="timeline-label">Peak intensity (2-4 hours in)</p>
+            </div>
+          </div>
+          <div class="timeline-row" id="row-fade">
+            <div class="timeline-icon icon-fade">💤</div>
+            <div class="timeline-text">
+              <p class="timeline-time" id="time-fade"></p>
+              <p class="timeline-label">Effects gradually fading</p>
+            </div>
+          </div>
+          <div class="result-note" id="resultNote">
+            Times are approximate. Onset varies by metabolism, body weight, and whether you've eaten recently. Start with a low amount and wait at least 2 hours before considering more.
+          </div>
+        </div>
+      </div>
+      <button class="reset-btn" id="resetBtn" style="display:none;" onclick="resetPlanner()">Pick a different time</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var buttons = document.querySelectorAll('.time-btn');
+  var resultArea = document.getElementById('resultArea');
+  var resetBtn = document.getElementById('resetBtn');
+
+  function formatTime(h) {
+    var hour = ((h % 24) + 24) % 24;
+    var suffix = hour >= 12 ? 'PM' : 'AM';
+    var display = hour % 12;
+    if (display === 0) display = 12;
+    return display + ':00 ' + suffix;
+  }
+
+  function formatTimeRange(h1, h2) {
+    return formatTime(h1) + ' \u2013 ' + formatTime(h2);
+  }
+
+  function showResult(targetHour) {
+    var takeHour = targetHour - 2;
+
+    document.getElementById('time-take').textContent = formatTime(takeHour);
+    document.getElementById('time-onset').textContent = formatTimeRange(takeHour, takeHour + 1.5);
+    document.getElementById('time-peak').textContent = formatTimeRange(takeHour + 2, takeHour + 4);
+    document.getElementById('time-fade').textContent = formatTimeRange(takeHour + 4, takeHour + 8);
+
+    resultArea.classList.add('visible');
+    resetBtn.style.display = 'block';
+
+    var rows = document.querySelectorAll('.timeline-row');
+    var note = document.getElementById('resultNote');
+    rows.forEach(function(row, i) {
+      setTimeout(function() {
+        row.classList.add('show');
+      }, 100 + (i * 120));
+    });
+    setTimeout(function() {
+      note.classList.add('show');
+    }, 100 + (rows.length * 120));
+  }
+
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      buttons.forEach(function(b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+
+      var rows = document.querySelectorAll('.timeline-row');
+      var note = document.getElementById('resultNote');
+      rows.forEach(function(r) { r.classList.remove('show'); });
+      note.classList.remove('show');
+
+      if (resultArea.classList.contains('visible')) {
+        resultArea.classList.remove('visible');
+        setTimeout(function() {
+          showResult(parseInt(btn.getAttribute('data-hour')));
+        }, 300);
+      } else {
+        showResult(parseInt(btn.getAttribute('data-hour')));
+      }
+    });
+  });
+
+  window.resetPlanner = function() {
+    buttons.forEach(function(b) { b.classList.remove('selected'); });
+    var rows = document.querySelectorAll('.timeline-row');
+    var note = document.getElementById('resultNote');
+    rows.forEach(function(r) { r.classList.remove('show'); });
+    note.classList.remove('show');
+    resultArea.classList.remove('visible');
+    resetBtn.style.display = 'none';
+  };
+})();
+</script>
+</body>
+</html>
